@@ -1,4 +1,113 @@
-<div class="page-card">
-  <h1>Clients</h1>
-  <p>Clients CRUD will be displayed here.</p>
+<div class="clients-page">
+  <div class="page-header">
+    <div>
+      <h1>Klijenti</h1>
+      <p>Upravljajte klijentima u salonu.</p>
+    </div>
+
+    <button class="primary-btn" (click)="openCreateModal()">
+      Dodaj klijenta
+    </button>
+  </div>
+
+  <div class="toolbar">
+    <input
+      type="text"
+      placeholder="Pretraži klijente..."
+      [(ngModel)]="search"
+      (keyup.enter)="onSearch()"
+    />
+    <button class="secondary-btn" (click)="onSearch()">Pretraga</button>
+  </div>
+
+  <div class="error-box" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="table-card">
+    <table *ngIf="clients.length > 0">
+      <thead>
+      <tr>
+        <th>Ime</th>
+        <th>Prezime</th>
+        <th>Nadimak</th>
+        <th>Broj telefona</th>
+        <th class="actions-column">Akcije</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr *ngFor="let client of clients">
+        <td>{{ client.first_name }}</td>
+        <td>{{ client.last_name }}</td>
+        <td>{{ client.nickname || '-' }}</td>
+        <td>{{ client.phone_number }}</td>
+        <td class="actions">
+          <button class="edit-btn" (click)="openEditModal(client)">Izmeni</button>
+          <button class="delete-btn" (click)="deleteClient(client)">Obriši</button>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination" *ngIf="lastPage > 1">
+    <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+      Prethodna
+    </button>
+
+    <span>Strana {{ currentPage }} od {{ lastPage }}</span>
+
+    <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === lastPage">
+      Sledeća
+    </button>
+  </div>
+</div>
+
+<div class="modal-backdrop" *ngIf="isModalOpen">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2>{{ isEditMode ? 'Edit Client' : 'Add Client' }}</h2>
+      <button class="close-btn" (click)="closeModal()">×</button>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="client-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Ime</label>
+          <input type="text" formControlName="first_name" />
+          <small *ngIf="form.controls.first_name.touched && form.controls.first_name.invalid">
+           Ime je obavezno!
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label>Prezime</label>
+          <input type="text" formControlName="last_name" />
+          <small *ngIf="form.controls.last_name.touched && form.controls.last_name.invalid">
+            Prezime je obavezno!
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label>Nadimak</label>
+          <input type="text" formControlName="nickname" />
+        </div>
+
+        <div class="form-group">
+          <label>Broj telefona</label>
+          <input type="text" formControlName="phone_number" />
+          <small *ngIf="form.controls.phone_number.touched && form.controls.phone_number.invalid">
+            Broj telefona je obavezan!
+          </small>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="secondary-btn" (click)="closeModal()">Odustani</button>
+        <button type="submit" class="primary-btn" [disabled]="submitting">
+          {{ submitting ? 'Čuva se...' : (isEditMode ? 'Izmeni' : 'Dodaj') }}
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
