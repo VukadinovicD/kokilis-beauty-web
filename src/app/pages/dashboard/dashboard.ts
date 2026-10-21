@@ -26,6 +26,10 @@ const MONTH_NAMES = [
 
 const WEEK_DAYS = ['Pon', 'Uto', 'Sre', 'Čet', 'Pet', 'Sub', 'Ned'];
 
+// Hours and minutes offered when picking the start time, 24-hour clock.
+const HOURS = Array.from({ length: 15 }, (_, i) => String(i + 7).padStart(2, '0'));
+const MINUTES = ['00', '15', '30', '45'];
+
 @Component({
   selector: 'app-dashboard',
   imports: [NgIf, NgForOf, FormsModule, ReactiveFormsModule],
@@ -62,6 +66,9 @@ export class Dashboard implements OnInit {
   selectedClient: Client | null = null;
   private clientSearchTimeout: ReturnType<typeof setTimeout> | undefined;
 
+  startHour = '';
+  startMinute = '';
+
   form = this.fb.group({
     client_id: this.fb.control<number | null>(null, Validators.required),
     salon_service_id: this.fb.control<number | null>(null, Validators.required),
@@ -81,6 +88,15 @@ export class Dashboard implements OnInit {
     const m = String(this.selectedDate.getMonth() + 1).padStart(2, '0');
 
     return `${d}.${m}.${this.selectedDate.getFullYear()}.`;
+  }
+
+  // An existing appointment may start outside the offered times; it stays selectable.
+  get hourOptions(): string[] {
+    return withValue(HOURS, this.startHour);
+  }
+
+  get minuteOptions(): string[] {
+    return withValue(MINUTES, this.startMinute);
   }
 
   ngOnInit(): void {
@@ -206,6 +222,8 @@ export class Dashboard implements OnInit {
     this.clientSearch = '';
     this.clientResults = [];
     this.errorMessage = '';
+    this.startHour = '';
+    this.startMinute = '';
 
     this.form.reset({
       client_id: null,
@@ -226,10 +244,13 @@ export class Dashboard implements OnInit {
     this.clientResults = [];
     this.errorMessage = '';
 
+    const startTime = this.formatTime(appointment.start_time);
+    [this.startHour, this.startMinute] = startTime.split(':');
+
     this.form.setValue({
       client_id: appointment.client_id,
       salon_service_id: appointment.salon_service_id,
-      start_time: this.formatTime(appointment.start_time),
+      start_time: startTime,
     });
   }
 
@@ -279,6 +300,23 @@ export class Dashboard implements OnInit {
   clearClient(): void {
     this.selectedClient = null;
     this.form.patchValue({ client_id: null });
+  }
+
+  selectHour(hour: string): void {
+    this.startHour = hour;
+    this.startMinute ||= '00';
+    this.syncStartTime();
+  }
+
+  selectMinute(minute: string): void {
+    this.startMinute = minute;
+    this.syncStartTime();
+  }
+
+  // The time counts only once an hour is picked; a minute alone is kept until then.
+  private syncStartTime(): void {
+    this.form.patchValue({ start_time: this.startHour ? `${this.startHour}:${this.startMinute}` : '' });
+    this.form.controls.start_time.markAsTouched();
   }
 
   submit(): void {
@@ -372,4 +410,8 @@ export class Dashboard implements OnInit {
   private extractErrorMessage(error: any): string {
     return error?.message || 'Došlo je do greške. Pokušajte ponovo.';
   }
+}
+
+function withValue(options: string[], value: string): string[] {
+  return !value || options.includes(value) ? options : [...options, value].sort();
 }

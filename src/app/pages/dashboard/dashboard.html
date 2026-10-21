@@ -106,8 +106,43 @@
         </div>
 
         <div class="form-group full-width">
-          <label>Početak</label>
-          <input type="time" formControlName="start_time" />
+          <label>
+            Početak
+            <span class="time-value">{{ form.value.start_time || '--:--' }}</span>
+          </label>
+
+          <div class="time-picker">
+            <div class="time-column">
+              <span class="time-caption">Sat</span>
+              <div class="time-options hours">
+                <button
+                  type="button"
+                  class="time-option"
+                  *ngFor="let hour of hourOptions"
+                  [class.selected]="hour === startHour"
+                  (click)="selectHour(hour)"
+                >
+                  {{ hour }}
+                </button>
+              </div>
+            </div>
+
+            <div class="time-column">
+              <span class="time-caption">Minut</span>
+              <div class="time-options minutes">
+                <button
+                  type="button"
+                  class="time-option"
+                  *ngFor="let minute of minuteOptions"
+                  [class.selected]="minute === startMinute"
+                  (click)="selectMinute(minute)"
+                >
+                  {{ minute }}
+                </button>
+              </div>
+            </div>
+          </div>
+
           <small *ngIf="form.controls.start_time.touched && form.controls.start_time.invalid">
             Vreme početka je obavezno!
           </small>
