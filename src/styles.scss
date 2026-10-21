@@ -1,1 +1,28 @@
 /* You can add global styles to this file, and also import other style files */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Quicksand', sans-serif;
+  background: #f6f2ef;
+  color: #3a3a3a;
+}
+
+.page-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 12px 30px rgba(83, 59, 48, 0.08);
+
+  h1 {
+    margin-top: 0;
+    color: #6f5247;
+  }
+
+  p {
+    color: #7b6b63;
+  }
+}

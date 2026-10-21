@@ -1,0 +1,23 @@
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">KB</div>
+      <div>
+        <h2>Kokiliiis Beauty</h2>
+        <p>Beauty Room</p>
+      </div>
+    </div>
+
+    <nav class="nav-links">
+      <a routerLink="/dashboard" routerLinkActive="active">Početna</a>
+      <a routerLink="/clients" routerLinkActive="active">Klijenti</a>
+      <a routerLink="/services" routerLinkActive="active">Usluge</a>
+    </nav>
+
+    <button class="logout-btn" (click)="logout()">Odjavite se!</button>
+  </aside>
+
+  <main class="content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

@@ -1,0 +1,81 @@
+<div class="services-page">
+  <div class="page-header">
+    <div>
+      <h1>Usluge</h1>
+      <p>Upravljajte uslugama u salonu.</p>
+    </div>
+
+    <button class="primary-btn" (click)="openCreateModal()">
+      Dodaj uslugu
+    </button>
+  </div>
+
+  <div class="toolbar">
+    <input
+      type="text"
+      placeholder="Pretraži usluge..."
+      [(ngModel)]="search"
+      (keyup.enter)="onSearch()"
+    />
+    <button class="secondary-btn" (click)="onSearch()">Pretraga</button>
+  </div>
+
+  <div class="error-box" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="table-card">
+    <table *ngIf="filteredServices.length > 0; else emptyState">
+      <thead>
+      <tr>
+        <th>Naziv</th>
+        <th class="actions-column">Akcije</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr *ngFor="let service of filteredServices">
+        <td>{{ service.name }}</td>
+        <td class="actions">
+          <button class="edit-btn" (click)="openEditModal(service)">Izmeni</button>
+          <button class="delete-btn" (click)="deleteService(service)">Obriši</button>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+
+    <ng-template #emptyState>
+      <div class="empty-state">
+        Nema pronađenih usluga.
+      </div>
+    </ng-template>
+  </div>
+</div>
+
+<div class="modal-backdrop" *ngIf="isModalOpen">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2>{{ isEditMode ? 'Izmeni uslugu' : 'Dodaj uslugu' }}</h2>
+      <button class="close-btn" (click)="closeModal()">×</button>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="service-form">
+      <div class="form-grid">
+        <div class="form-group full-width">
+          <label>Naziv usluge</label>
+          <input type="text" formControlName="name" />
+
+          <small *ngIf="form.controls['name'].touched && form.controls['name'].invalid">
+            Naziv usluge je obavezan!
+          </small>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="secondary-btn" (click)="closeModal()">Odustani</button>
+        <button type="submit" class="primary-btn" [disabled]="submitting">
+          {{ submitting ? 'Čuva se...' : (isEditMode ? 'Izmeni' : 'Dodaj') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
