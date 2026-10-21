@@ -1,13 +1,21 @@
 .app-shell {
   display: flex;
   min-height: 100vh;
-  background: #f6f2ef;
+  background: var(--bg);
 }
 
 .sidebar {
+  // Stays in view at full screen height, so logout never needs scrolling.
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  flex-shrink: 0;
   width: 260px;
-  background: #8f6f60;
-  color: #ffffff;
+  background: var(--ink);
+  color: var(--on-ink);
   padding: 28px 20px;
   display: flex;
   flex-direction: column;
@@ -15,31 +23,24 @@
 }
 
 .brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-
-  h2 {
-    margin: 0;
-    font-size: 20px;
-  }
+  text-align: center;
+  padding: 4px 6px 0;
 
   p {
-    margin: 4px 0 0;
-    opacity: 0.8;
-    font-size: 13px;
+    margin: 10px 0 0;
+    opacity: 0.65;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
   }
 }
 
 .brand-logo {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.18);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 300;
+  display: block;
+  width: 100%;
+  max-width: 180px;
+  height: auto;
+  margin: 0 auto;
 }
 
 .nav-links {
@@ -50,7 +51,7 @@
 
   a {
     text-decoration: none;
-    color: #ffffff;
+    color: var(--on-ink);
     padding: 14px 16px;
     border-radius: 14px;
     transition: 0.2s ease;
@@ -59,7 +60,7 @@
 
   a:hover,
   a.active {
-    background: rgba(255, 255, 255, 0.16);
+    background: rgba(243, 241, 236, 0.12);
   }
 }
 
@@ -68,13 +69,19 @@
   height: 46px;
   border: none;
   border-radius: 14px;
-  background: #ffffff;
-  color: #8f6f60;
+  background: var(--on-ink);
+  color: var(--ink);
   font-weight: 700;
   cursor: pointer;
+  transition: 0.2s ease;
+
+  &:hover {
+    background: var(--surface);
+  }
 }
 
 .content {
   flex: 1;
+  min-width: 0;
   padding: 28px;
 }

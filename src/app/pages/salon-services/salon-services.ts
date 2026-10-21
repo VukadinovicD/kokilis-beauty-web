@@ -53,7 +53,7 @@ export class SalonServices implements OnInit {
         this.cdr.detectChanges();
       },
       error: (error) => {
-        this.errorMessage = error?.error?.message || 'Error to load services.';
+        this.errorMessage = error?.message || 'Neuspešno učitavanje usluga.';
         this.cdr.detectChanges();
       }
     });
@@ -170,13 +170,6 @@ export class SalonServices implements OnInit {
   }
 
   private extractErrorMessage(error: any): string {
-    if (error?.error?.errors) {
-      const validationErrors = Object.values(error.error.errors).flat();
-      if (validationErrors.length > 0) {
-        return String(validationErrors[0]);
-      }
-    }
-
-    return error?.error?.message || 'Došlo je do greške. Pokušajte ponovo.';
+    return error?.message || 'Došlo je do greške. Pokušajte ponovo.';
   }
 }

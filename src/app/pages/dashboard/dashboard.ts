@@ -1,9 +1,375 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { NgForOf, NgIf } from '@angular/common';
+import { AppointmentsService } from '../../core/services/appointments.service';
+import { ClientsService } from '../../core/services/clients.service';
+import { SalonServiceService } from '../../core/services/salon-service.service';
+import { Appointment } from '../../core/models/appointment.model';
+import { Client } from '../../core/models/client.model';
+import { SalonService } from '../../core/models/salon-service.model';
+
+interface CalendarDay {
+  date: Date;
+  currentMonth: boolean;
+  isToday: boolean;
+  appointments: Appointment[];
+  emptySlots: number[];
+}
+
+// The salon always has four appointments a day; unfilled ones show as blank slots.
+const SLOTS_PER_DAY = 4;
+
+const MONTH_NAMES = [
+  'Januar', 'Februar', 'Mart', 'April', 'Maj', 'Jun',
+  'Jul', 'Avgust', 'Septembar', 'Oktobar', 'Novembar', 'Decembar',
+];
+
+const WEEK_DAYS = ['Pon', 'Uto', 'Sre', 'Čet', 'Pet', 'Sub', 'Ned'];
 
 @Component({
   selector: 'app-dashboard',
-  imports: [],
+  imports: [NgIf, NgForOf, FormsModule, ReactiveFormsModule],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
-export class Dashboard {}
+export class Dashboard implements OnInit {
+  private appointmentsService = inject(AppointmentsService);
+  private clientsService = inject(ClientsService);
+  private salonServiceService = inject(SalonServiceService);
+  private fb = inject(FormBuilder);
+  private cdr = inject(ChangeDetectorRef);
+
+  monthNames = MONTH_NAMES;
+  weekDays = WEEK_DAYS;
+
+  viewYear = new Date().getFullYear();
+  viewMonth = new Date().getMonth();
+  calendarDays: CalendarDay[] = [];
+
+  appointments: Appointment[] = [];
+  salonServices: SalonService[] = [];
+
+  errorMessage = '';
+  submitting = false;
+
+  isModalOpen = false;
+  isEditMode = false;
+  selectedAppointmentId: number | null = null;
+  selectedDate: Date | null = null;
+
+  clientSearch = '';
+  clientResults: Client[] = [];
+  selectedClient: Client | null = null;
+  private clientSearchTimeout: ReturnType<typeof setTimeout> | undefined;
+
+  form = this.fb.group({
+    client_id: this.fb.control<number | null>(null, Validators.required),
+    salon_service_id: this.fb.control<number | null>(null, Validators.required),
+    start_time: ['', Validators.required],
+  });
+
+  get monthLabel(): string {
+    return `${this.monthNames[this.viewMonth]} ${this.viewYear}`;
+  }
+
+  get selectedDateLabel(): string {
+    if (!this.selectedDate) {
+      return '';
+    }
+
+    const d = String(this.selectedDate.getDate()).padStart(2, '0');
+    const m = String(this.selectedDate.getMonth() + 1).padStart(2, '0');
+
+    return `${d}.${m}.${this.selectedDate.getFullYear()}.`;
+  }
+
+  ngOnInit(): void {
+    this.loadSalonServices();
+    this.buildCalendar();
+    this.loadAppointments();
+  }
+
+  previousMonth(): void {
+    this.viewMonth--;
+
+    if (this.viewMonth < 0) {
+      this.viewMonth = 11;
+      this.viewYear--;
+    }
+
+    this.buildCalendar();
+    this.loadAppointments();
+  }
+
+  nextMonth(): void {
+    this.viewMonth++;
+
+    if (this.viewMonth > 11) {
+      this.viewMonth = 0;
+      this.viewYear++;
+    }
+
+    this.buildCalendar();
+    this.loadAppointments();
+  }
+
+  goToToday(): void {
+    const today = new Date();
+    this.viewYear = today.getFullYear();
+    this.viewMonth = today.getMonth();
+    this.buildCalendar();
+    this.loadAppointments();
+  }
+
+  buildCalendar(): void {
+    const year = this.viewYear;
+    const month = this.viewMonth;
+
+    const firstDay = new Date(year, month, 1);
+    const startOffset = (firstDay.getDay() + 6) % 7;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const prevMonthDays = new Date(year, month, 0).getDate();
+    const todayKey = this.dateKey(new Date());
+
+    const days: CalendarDay[] = [];
+
+    for (let i = startOffset; i > 0; i--) {
+      const date = new Date(year, month - 1, prevMonthDays - i + 1);
+      days.push({ date, currentMonth: false, isToday: false, appointments: [], emptySlots: [] });
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(year, month, d);
+      days.push({ date, currentMonth: true, isToday: this.dateKey(date) === todayKey, appointments: [], emptySlots: [] });
+    }
+
+    let nextMonthDay = 1;
+    while (days.length < 42) {
+      days.push({
+        date: new Date(year, month + 1, nextMonthDay),
+        currentMonth: false,
+        isToday: false,
+        appointments: [],
+        emptySlots: [],
+      });
+      nextMonthDay++;
+    }
+
+    this.calendarDays = days;
+    this.attachAppointments();
+  }
+
+  loadSalonServices(): void {
+    this.salonServiceService.getAll().subscribe({
+      next: (services) => {
+        this.salonServices = services;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.errorMessage = 'Neuspešno učitavanje usluga.';
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  loadAppointments(): void {
+    this.errorMessage = '';
+    const start = this.dateKey(this.calendarDays[0].date);
+    const end = this.dateKey(this.calendarDays[this.calendarDays.length - 1].date);
+
+    this.appointmentsService.getAll(start, end).subscribe({
+      next: (appointments) => {
+        this.appointments = appointments ?? [];
+        this.attachAppointments();
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.errorMessage = 'Neuspešno učitavanje termina.';
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  formatTime(value: string): string {
+    const date = new Date(value.replace(' ', 'T'));
+    const h = String(date.getHours()).padStart(2, '0');
+    const m = String(date.getMinutes()).padStart(2, '0');
+    return `${h}:${m}`;
+  }
+
+  openCreateModal(date: Date): void {
+    this.isModalOpen = true;
+    this.isEditMode = false;
+    this.selectedAppointmentId = null;
+    this.selectedDate = date;
+    this.selectedClient = null;
+    this.clientSearch = '';
+    this.clientResults = [];
+    this.errorMessage = '';
+
+    this.form.reset({
+      client_id: null,
+      salon_service_id: null,
+      start_time: '',
+    });
+  }
+
+  openEditModal(appointment: Appointment, event: Event): void {
+    event.stopPropagation();
+
+    this.isModalOpen = true;
+    this.isEditMode = true;
+    this.selectedAppointmentId = appointment.id;
+    this.selectedDate = new Date(appointment.start_time.replace(' ', 'T'));
+    this.selectedClient = appointment.client ?? null;
+    this.clientSearch = '';
+    this.clientResults = [];
+    this.errorMessage = '';
+
+    this.form.setValue({
+      client_id: appointment.client_id,
+      salon_service_id: appointment.salon_service_id,
+      start_time: this.formatTime(appointment.start_time),
+    });
+  }
+
+  closeModal(): void {
+    this.isModalOpen = false;
+    this.isEditMode = false;
+    this.selectedAppointmentId = null;
+    this.selectedDate = null;
+    this.selectedClient = null;
+    this.clientSearch = '';
+    this.clientResults = [];
+    this.submitting = false;
+    this.errorMessage = '';
+    this.form.reset();
+  }
+
+  searchClients(): void {
+    clearTimeout(this.clientSearchTimeout);
+    const term = this.clientSearch.trim();
+
+    if (!term) {
+      this.clientResults = [];
+      return;
+    }
+
+    this.clientSearchTimeout = setTimeout(() => {
+      this.clientsService.getClients(term, 1).subscribe({
+        next: (response) => {
+          this.clientResults = response.data ?? [];
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.clientResults = [];
+        },
+      });
+    }, 300);
+  }
+
+  selectClient(client: Client): void {
+    this.selectedClient = client;
+    this.clientResults = [];
+    this.clientSearch = '';
+    this.form.patchValue({ client_id: client.id });
+    this.form.controls.client_id.markAsTouched();
+  }
+
+  clearClient(): void {
+    this.selectedClient = null;
+    this.form.patchValue({ client_id: null });
+  }
+
+  submit(): void {
+    if (this.form.invalid || !this.selectedDate) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    const startTime = this.form.value.start_time ?? '';
+
+    const dateStr = this.dateKey(this.selectedDate);
+
+    const payload = {
+      client_id: this.form.value.client_id!,
+      salon_service_id: this.form.value.salon_service_id!,
+      start_time: `${dateStr} ${startTime}:00`,
+    };
+
+    this.submitting = true;
+    this.errorMessage = '';
+
+    const request =
+      this.isEditMode && this.selectedAppointmentId
+        ? this.appointmentsService.update(this.selectedAppointmentId, payload)
+        : this.appointmentsService.create(payload);
+
+    request.subscribe({
+      next: () => {
+        this.submitting = false;
+        this.closeModal();
+        this.loadAppointments();
+      },
+      error: (error) => {
+        this.submitting = false;
+        this.errorMessage = this.extractErrorMessage(error);
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  deleteAppointment(): void {
+    if (!this.selectedAppointmentId) {
+      return;
+    }
+
+    const confirmed = window.confirm('Da li ste sigurni da želite da obrišete termin?');
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.appointmentsService.delete(this.selectedAppointmentId).subscribe({
+      next: () => {
+        this.closeModal();
+        this.loadAppointments();
+      },
+      error: () => {
+        this.errorMessage = 'Neuspešno brisanje termina.';
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private attachAppointments(): void {
+    const map = new Map<string, Appointment[]>();
+
+    for (const appointment of this.appointments) {
+      const key = this.dateKey(new Date(appointment.start_time.replace(' ', 'T')));
+
+      if (!map.has(key)) {
+        map.set(key, []);
+      }
+
+      map.get(key)!.push(appointment);
+    }
+
+    for (const day of this.calendarDays) {
+      const key = this.dateKey(day.date);
+      day.appointments = (map.get(key) ?? []).sort((a, b) => a.start_time.localeCompare(b.start_time));
+      day.emptySlots = Array.from({ length: Math.max(0, SLOTS_PER_DAY - day.appointments.length) }, (_, i) => i);
+    }
+  }
+
+  private dateKey(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  private extractErrorMessage(error: any): string {
+    return error?.message || 'Došlo je do greške. Pokušajte ponovo.';
+  }
+}

@@ -1,30 +1,26 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { SalonService } from '../models/salon-service.model';
-import {environment} from '../../../environments/environment';
+import { query, supabase } from '../supabase';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SalonServiceService {
-  private apiUrl = `${environment.apiUrl}/salon-services`;
-
-  constructor(private http: HttpClient) {}
-
   getAll(): Observable<SalonService[]> {
-    return this.http.get<SalonService[]>(this.apiUrl);
+    return query(supabase.from('salon_services').select().order('name'));
   }
 
-  create(payload: { name: string }): Observable<{ message: string; data: SalonService }> {
-    return this.http.post<{ message: string; data: SalonService }>(this.apiUrl, payload);
+  // The slug is set by the database from the name.
+  create(payload: { name: string }): Observable<SalonService> {
+    return query(supabase.from('salon_services').insert(payload).select().single());
   }
 
-  update(id: number, payload: { name: string }): Observable<{ message: string; data: SalonService }> {
-    return this.http.put<{ message: string; data: SalonService }>(`${this.apiUrl}/${id}`, payload);
+  update(id: number, payload: { name: string }): Observable<SalonService> {
+    return query(supabase.from('salon_services').update(payload).eq('id', id).select().single());
   }
 
-  delete(id: number): Observable<{ message: string }> {
-    return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}`);
+  delete(id: number): Observable<null> {
+    return query(supabase.from('salon_services').delete().eq('id', id));
   }
 }

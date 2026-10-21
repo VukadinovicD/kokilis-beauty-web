@@ -11,13 +11,13 @@
 
   h1 {
     margin: 0 0 6px;
-    color: #6f5247;
+    color: var(--ink);
     font-size: 30px;
   }
 
   p {
     margin: 0;
-    color: #8d7a70;
+    color: var(--muted);
   }
 }
 
@@ -28,24 +28,24 @@
   input {
     flex: 1;
     height: 46px;
-    border: 1px solid #dacfc8;
+    border: 1px solid var(--line);
     border-radius: 14px;
     padding: 0 14px;
     outline: none;
     font-size: 14px;
 
     &:focus {
-      border-color: #926e60;
-      box-shadow: 0 0 0 4px rgba(146, 110, 96, 0.1);
+      border-color: var(--ink);
+      box-shadow: 0 0 0 4px var(--focus-ring);
     }
   }
 }
 
 .table-card {
-  background: #ffffff;
+  background: var(--surface);
   border-radius: 22px;
   padding: 20px;
-  box-shadow: 0 14px 35px rgba(83, 59, 48, 0.08);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
 }
 
@@ -56,15 +56,15 @@ table {
   thead th {
     text-align: left;
     font-size: 14px;
-    color: #7d685f;
+    color: var(--muted);
     padding: 14px 12px;
-    border-bottom: 1px solid #eee3dd;
+    border-bottom: 1px solid var(--line);
   }
 
   tbody td {
     padding: 16px 12px;
-    border-bottom: 1px solid #f3ece8;
-    color: #4a3c35;
+    border-bottom: 1px solid var(--line-soft);
+    color: var(--text);
     font-size: 14px;
   }
 }
@@ -92,41 +92,41 @@ table {
 }
 
 .primary-btn {
-  background: #926e60;
-  color: #fff;
+  background: var(--ink);
+  color: var(--on-ink);
 
   &:hover {
-    background: #7f5f52;
+    background: var(--ink-soft);
   }
 }
 
 .secondary-btn {
-  background: #efe7e2;
-  color: #6f5247;
+  background: var(--surface-alt);
+  color: var(--ink);
 }
 
 .edit-btn {
-  background: #efe7e2;
-  color: #6f5247;
+  background: var(--surface-alt);
+  color: var(--ink);
 }
 
 .delete-btn {
-  background: #f8e6e6;
-  color: #b44f4f;
+  background: var(--danger-bg);
+  color: var(--danger);
 }
 
 .empty-state {
   text-align: center;
   padding: 28px;
-  color: #8d7a70;
+  color: var(--muted);
 }
 
 .error-box {
   padding: 14px 16px;
   border-radius: 14px;
-  background: #fdf1f1;
-  color: #b44f4f;
-  border: 1px solid #f2d1d1;
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
 }
 
 .pagination {
@@ -140,8 +140,8 @@ table {
     height: 40px;
     padding: 0 16px;
     border-radius: 12px;
-    background: #efe7e2;
-    color: #6f5247;
+    background: var(--surface-alt);
+    color: var(--ink);
     cursor: pointer;
     font-family: inherit;
 
@@ -152,7 +152,7 @@ table {
   }
 
   span {
-    color: #6f5247;
+    color: var(--ink);
     font-weight: 600;
   }
 }
@@ -160,7 +160,7 @@ table {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(48, 35, 30, 0.35);
+  background: rgba(28, 26, 24, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -170,10 +170,10 @@ table {
 .modal-card {
   width: 100%;
   max-width: 640px;
-  background: #fff;
+  background: var(--surface);
   border-radius: 24px;
   padding: 24px;
-  box-shadow: 0 20px 50px rgba(83, 59, 48, 0.18);
+  box-shadow: var(--shadow-lg);
 }
 
 .modal-header {
@@ -184,7 +184,7 @@ table {
 
   h2 {
     margin: 0;
-    color: #6f5247;
+    color: var(--ink);
   }
 }
 
@@ -192,7 +192,7 @@ table {
   border: none;
   background: transparent;
   font-size: 28px;
-  color: #7d685f;
+  color: var(--muted);
   cursor: pointer;
 }
 
@@ -214,27 +214,27 @@ table {
   gap: 8px;
 
   label {
-    color: #6f5247;
+    color: var(--ink);
     font-weight: 600;
     font-size: 14px;
   }
 
   input {
     height: 46px;
-    border: 1px solid #dacfc8;
+    border: 1px solid var(--line);
     border-radius: 14px;
     padding: 0 14px;
     outline: none;
     font-family: inherit;
 
     &:focus {
-      border-color: #926e60;
-      box-shadow: 0 0 0 4px rgba(146, 110, 96, 0.1);
+      border-color: var(--ink);
+      box-shadow: 0 0 0 4px var(--focus-ring);
     }
   }
 
   small {
-    color: #b44f4f;
+    color: var(--danger);
     font-size: 12px;
   }
 }

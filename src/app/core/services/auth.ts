@@ -1,61 +1,57 @@
-import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
-import { LoginResponse, User } from '../models/auth.model';
-import {environment} from '../../../environments/environment';
+import { Injectable } from '@angular/core';
+import { User as SupabaseUser } from '@supabase/supabase-js';
+import { BehaviorSubject, from, map, Observable, tap } from 'rxjs';
+import { User } from '../models/auth.model';
+import { supabase } from '../supabase';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private http = inject(HttpClient);
-
-  private apiUrl = environment.apiUrl;
-  private userSubject = new BehaviorSubject<User | null>(this.getStoredUser());
+  private userSubject = new BehaviorSubject<User | null>(null);
 
   user$ = this.userSubject.asObservable();
 
-  login(payload: { email: string; password: string }): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, payload).pipe(
-      tap((response) => {
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('user', JSON.stringify(response.user));
-        this.userSubject.next(response.user);
-      })
+  constructor() {
+    // Supabase keeps the session in localStorage and refreshes it on its own.
+    supabase.auth.onAuthStateChange((_event, session) => {
+      this.userSubject.next(session ? toUser(session.user) : null);
+    });
+  }
+
+  login(payload: { email: string; password: string }): Observable<User> {
+    return from(supabase.auth.signInWithPassword(payload)).pipe(
+      map(({ data, error }) => {
+        if (error) {
+          throw new Error(error.code === 'invalid_credentials' ? 'Pogrešan email ili lozinka.' : error.message);
+        }
+
+        return toUser(data.user);
+      }),
+      tap((user) => this.userSubject.next(user))
     );
   }
 
-  getMe(): Observable<{ user: User }> {
-    return this.http.get<{ user: User }>(`${this.apiUrl}/me`).pipe(
-      tap((response) => {
-        localStorage.setItem('user', JSON.stringify(response.user));
-        this.userSubject.next(response.user);
-      })
-    );
+  getMe(): Observable<User | null> {
+    return from(supabase.auth.getUser()).pipe(map(({ data }) => (data.user ? toUser(data.user) : null)));
   }
 
-  logout(): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${this.apiUrl}/logout`, {}).pipe(
-      tap(() => this.clearSession())
-    );
+  logout(): Observable<void> {
+    return from(supabase.auth.signOut()).pipe(map(() => undefined));
   }
 
-  clearSession(): void {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    this.userSubject.next(null);
+  async isLoggedIn(): Promise<boolean> {
+    const { data } = await supabase.auth.getSession();
+    return !!data.session;
   }
+}
 
-  isLoggedIn(): boolean {
-    return !!localStorage.getItem('token');
-  }
-
-  getToken(): string | null {
-    return localStorage.getItem('token');
-  }
-
-  getStoredUser(): User | null {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
-  }
+function toUser(user: SupabaseUser): User {
+  return {
+    id: user.id,
+    first_name: user.user_metadata['first_name'] ?? '',
+    last_name: user.user_metadata['last_name'] ?? '',
+    email: user.email ?? '',
+    role: user.app_metadata['role'] ?? null,
+  };
 }

@@ -40,7 +40,7 @@ export class Login {
         this.router.navigate(['/dashboard']);
       },
       error: (error) => {
-        this.errorMessage = error?.error?.message || 'Login failed.';
+        this.errorMessage = error?.message || 'Logovanje nije uspelo.';
         this.loading = false;
       },
       complete: () => {

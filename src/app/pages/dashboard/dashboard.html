@@ -1,4 +1,131 @@
-<div class="page-card">
-  <h1>Dashboard</h1>
-  <p>Calendar and appointment management will be displayed here.</p>
+<div class="dashboard-page">
+  <div class="page-header">
+    <div>
+      <h1>Kalendar</h1>
+      <p>Pregled i zakazivanje termina.</p>
+    </div>
+  </div>
+
+  <div class="error-box" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="calendar-card">
+    <div class="calendar-toolbar">
+      <button type="button" class="nav-btn" (click)="previousMonth()">‹</button>
+      <h2>{{ monthLabel }}</h2>
+      <button type="button" class="nav-btn" (click)="nextMonth()">›</button>
+      <button type="button" class="today-btn" (click)="goToToday()">Danas</button>
+    </div>
+
+    <div class="weekdays">
+      <span *ngFor="let day of weekDays">{{ day }}</span>
+    </div>
+
+    <div class="calendar-grid">
+      <div
+        class="day-cell"
+        *ngFor="let day of calendarDays"
+        [class.other-month]="!day.currentMonth"
+        [class.today]="day.isToday"
+        (click)="day.currentMonth && openCreateModal(day.date)"
+      >
+        <div class="day-number">{{ day.date.getDate() }}</div>
+
+        <div class="appointments-list">
+          <div
+            class="appointment-chip"
+            *ngFor="let appointment of day.appointments"
+            (click)="openEditModal(appointment, $event)"
+          >
+            <span class="chip-time">{{ formatTime(appointment.start_time) }}</span>
+            <span class="chip-name">
+              {{ appointment.client?.first_name }} {{ appointment.client?.last_name }}
+            </span>
+          </div>
+
+          <div class="empty-slot" *ngFor="let slot of day.emptySlots"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" *ngIf="isModalOpen">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2>{{ isEditMode ? 'Izmeni termin' : 'Novi termin' }} — {{ selectedDateLabel }}</h2>
+      <button class="close-btn" (click)="closeModal()">×</button>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="appointment-form">
+      <div class="form-grid">
+        <div class="form-group full-width">
+          <label>Klijent</label>
+
+          <ng-container *ngIf="!selectedClient; else chosenClient">
+            <div class="client-search">
+              <input
+                type="text"
+                placeholder="Pretraži klijenta..."
+                [(ngModel)]="clientSearch"
+                [ngModelOptions]="{standalone: true}"
+                (input)="searchClients()"
+              />
+              <div class="search-results" *ngIf="clientResults.length > 0">
+                <div class="search-result" *ngFor="let client of clientResults" (click)="selectClient(client)">
+                  {{ client.first_name }} {{ client.last_name }}
+                  <span *ngIf="client.nickname"> ({{ client.nickname }})</span>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+          <ng-template #chosenClient>
+            <div class="chosen-value">
+              <span>{{ selectedClient?.first_name }} {{ selectedClient?.last_name }}</span>
+              <button type="button" class="clear-btn" (click)="clearClient()">×</button>
+            </div>
+          </ng-template>
+
+          <small *ngIf="form.controls.client_id.touched && form.controls.client_id.invalid">
+            Klijent je obavezan!
+          </small>
+        </div>
+
+        <div class="form-group full-width">
+          <label>Usluga</label>
+          <select formControlName="salon_service_id">
+            <option [ngValue]="null" disabled>Izaberite uslugu</option>
+            <option *ngFor="let service of salonServices" [ngValue]="service.id">{{ service.name }}</option>
+          </select>
+
+          <small *ngIf="form.controls.salon_service_id.touched && form.controls.salon_service_id.invalid">
+            Usluga je obavezna!
+          </small>
+        </div>
+
+        <div class="form-group full-width">
+          <label>Početak</label>
+          <input type="time" formControlName="start_time" />
+          <small *ngIf="form.controls.start_time.touched && form.controls.start_time.invalid">
+            Vreme početka je obavezno!
+          </small>
+        </div>
+      </div>
+
+      <div class="error-box" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+      <div class="modal-actions">
+        <button type="button" class="delete-btn" *ngIf="isEditMode" (click)="deleteAppointment()">
+          Obriši
+        </button>
+        <div class="spacer"></div>
+        <button type="button" class="secondary-btn" (click)="closeModal()">Odustani</button>
+        <button type="submit" class="primary-btn" [disabled]="submitting">
+          {{ submitting ? 'Čuva se...' : (isEditMode ? 'Izmeni' : 'Sačuvaj') }}
+        </button>
+      </div>
+    </form>
+  </div>
 </div>

@@ -1,0 +1,387 @@
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  h1 {
+    margin: 0 0 6px;
+    color: var(--ink);
+    font-size: 30px;
+  }
+
+  p {
+    margin: 0;
+    color: var(--muted);
+  }
+}
+
+.error-box {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
+}
+
+.calendar-card {
+  background: var(--surface);
+  border-radius: 22px;
+  padding: 20px;
+  box-shadow: var(--shadow-md);
+}
+
+.calendar-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+
+  h2 {
+    flex: 1;
+    margin: 0;
+    color: var(--ink);
+    font-size: 20px;
+    text-align: center;
+  }
+}
+
+.nav-btn,
+.today-btn {
+  border: none;
+  height: 40px;
+  border-radius: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.nav-btn {
+  width: 40px;
+  background: var(--surface-alt);
+  color: var(--ink);
+  font-size: 18px;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+}
+
+.today-btn {
+  padding: 0 16px;
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: 14px;
+
+  &:hover {
+    background: var(--ink-soft);
+  }
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 8px;
+
+  span {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    padding: 8px 0;
+  }
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.day-cell {
+  min-height: 100px;
+  border-radius: 14px;
+  background: var(--surface-alt);
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+
+  &.other-month {
+    background: transparent;
+    cursor: default;
+    opacity: 0.4;
+
+    &:hover {
+      background: transparent;
+    }
+  }
+
+  &.today {
+    box-shadow: inset 0 0 0 2px var(--ink);
+  }
+}
+
+.day-number {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.appointments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.appointment-chip,
+.empty-slot {
+  min-height: 36px;
+  border-radius: 8px;
+}
+
+.empty-slot {
+  border: 1px dashed var(--line);
+  background: var(--surface);
+}
+
+.day-cell:not(.other-month):hover .empty-slot {
+  border-color: var(--ink);
+}
+
+.appointment-chip {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--on-ink);
+  padding: 4px 6px;
+  font-size: 11px;
+  line-height: 1.3;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--ink-soft);
+  }
+}
+
+.chip-time {
+  font-weight: 700;
+}
+
+.chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 26, 24, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 10;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 560px;
+  background: var(--surface);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+
+  h2 {
+    margin: 0;
+    color: var(--ink);
+    font-size: 18px;
+  }
+}
+
+.close-btn,
+.clear-btn {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.close-btn {
+  font-size: 28px;
+}
+
+.appointment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+
+  &.full-width {
+    grid-column: 1 / -1;
+  }
+
+  label {
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  input,
+  select {
+    height: 46px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 0 14px;
+    outline: none;
+    font-family: inherit;
+    font-size: 14px;
+    background: var(--surface);
+    color: var(--text);
+
+    &:focus {
+      border-color: var(--ink);
+      box-shadow: 0 0 0 4px var(--focus-ring);
+    }
+  }
+
+  small {
+    color: var(--danger);
+    font-size: 12px;
+  }
+}
+
+.client-search {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.search-results {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.search-result {
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--bg);
+  }
+
+  & + .search-result {
+    border-top: 1px solid var(--line-soft);
+  }
+}
+
+.chosen-value {
+  height: 46px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.clear-btn {
+  font-size: 18px;
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+
+  .spacer {
+    flex: 1;
+  }
+}
+
+.primary-btn,
+.secondary-btn,
+.delete-btn {
+  border: none;
+  border-radius: 12px;
+  height: 42px;
+  padding: 0 16px;
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.primary-btn {
+  background: var(--ink);
+  color: var(--on-ink);
+
+  &:hover {
+    background: var(--ink-soft);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.secondary-btn {
+  background: var(--surface-alt);
+  color: var(--ink);
+}
+
+.delete-btn {
+  background: var(--danger-bg);
+  color: var(--danger);
+
+  &:hover {
+    background: var(--danger-border);
+  }
+}

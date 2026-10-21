@@ -18,11 +18,8 @@ export class AppLayout {
 
   logout(): void {
     this.authService.logout().subscribe({
-      next: () => this.router.navigate(['/login']),
-      error: () => {
-        this.authService.clearSession();
-        this.router.navigate(['/login']);
-      }
+      complete: () => this.router.navigate(['/login']),
+      error: () => this.router.navigate(['/login'])
     });
   }
 }
