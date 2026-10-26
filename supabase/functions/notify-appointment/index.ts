@@ -1,4 +1,4 @@
-// Lets a client know by SMS that their appointment was booked or moved.
+// Lets a client know by SMS that their appointment was booked, moved or cancelled.
 //
 // The web app calls this after saving an appointment. BulkGate credentials stay
 // here as function secrets, never in the browser.
@@ -28,6 +28,14 @@ const TRANSLITERATION: Record<string, string> = {
 const CHANGES: Record<string, string> = {
   created: 'zakazan je',
   updated: 'pomeren je',
+  // Sent just before the appointment is deleted, while it can still be read.
+  deleted: 'otkazan je',
+};
+
+const CLOSINGS: Record<string, string> = {
+  created: 'Vidimo se!',
+  updated: 'Vidimo se!',
+  deleted: 'Hvala na razumevanju!',
 };
 
 const corsHeaders = {
@@ -50,8 +58,8 @@ Deno.serve(async (req) => {
 
   const { appointment_id, change } = await req.json().catch(() => ({}));
 
-  if (!Number.isInteger(appointment_id) || !(change in CHANGES)) {
-    return json({ message: 'Expected appointment_id and change (created or updated).' }, 422);
+  if (!Number.isInteger(appointment_id) || !Object.hasOwn(CHANGES, change)) {
+    return json({ message: 'Expected appointment_id and change (created, updated or deleted).' }, 422);
   }
 
   // Query as the caller, so Row Level Security decides whether they may see this appointment.
@@ -69,7 +77,7 @@ Deno.serve(async (req) => {
     return json({ message: 'Appointment not found.' }, 404);
   }
 
-  const text = message(appointment, CHANGES[change]);
+  const text = message(appointment, change);
 
   try {
     await send(appointment.client as unknown as Client, text);
@@ -91,8 +99,8 @@ function message(appointment: { start_time: string; client: unknown; salon_servi
   // start_time is wall-clock time without a zone, e.g. 2026-10-19T10:30:00.
   const [, y, m, d, h, i] = appointment.start_time.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/)!;
 
-  return `Zdravo ${client.first_name}, Vas termin za ${service.name} ${change} ${d}.${m}.${y}. u ${h}:${i}. ` +
-    `Vidimo se! - ${env('MESSAGING_SIGNATURE', 'Kokilis Beauty')}`;
+  return `Zdravo ${client.first_name}, Vas termin za ${service.name} ${CHANGES[change]} ${d}.${m}.${y}. u ${h}:${i}. ` +
+    `${CLOSINGS[change]} - ${env('MESSAGING_SIGNATURE', 'Kokilis Beauty')}`;
 }
 
 async function send(client: Client, text: string): Promise<void> {
