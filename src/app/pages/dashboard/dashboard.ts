@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { NgForOf, NgIf } from '@angular/common';
+import { NgForOf, NgIf, NgTemplateOutlet } from '@angular/common';
 import { AppointmentsService } from '../../core/services/appointments.service';
 import { ClientsService } from '../../core/services/clients.service';
 import { SalonServiceService } from '../../core/services/salon-service.service';
@@ -12,12 +12,14 @@ interface CalendarDay {
   date: Date;
   currentMonth: boolean;
   isToday: boolean;
-  appointments: Appointment[];
-  emptySlots: number[];
+  // One entry per SLOT_TIMES, null while the slot is free.
+  slots: (Appointment | null)[];
+  // Appointments that did not fit into any slot, e.g. a fifth one that day.
+  extra: Appointment[];
 }
 
-// The salon always has four appointments a day; unfilled ones show as blank slots.
-const SLOTS_PER_DAY = 4;
+// The salon has four appointments a day, at these times; unfilled ones show as blank slots.
+const SLOT_TIMES = ['09:00', '11:00', '14:00', '16:00'];
 
 const MONTH_NAMES = [
   'Januar', 'Februar', 'Mart', 'April', 'Maj', 'Jun',
@@ -32,7 +34,7 @@ const MINUTES = ['00', '15', '30', '45'];
 
 @Component({
   selector: 'app-dashboard',
-  imports: [NgIf, NgForOf, FormsModule, ReactiveFormsModule],
+  imports: [NgIf, NgForOf, NgTemplateOutlet, FormsModule, ReactiveFormsModule],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
@@ -45,6 +47,7 @@ export class Dashboard implements OnInit {
 
   monthNames = MONTH_NAMES;
   weekDays = WEEK_DAYS;
+  slotTimes = SLOT_TIMES;
 
   viewYear = new Date().getFullYear();
   viewMonth = new Date().getMonth();
@@ -151,12 +154,12 @@ export class Dashboard implements OnInit {
 
     for (let i = startOffset; i > 0; i--) {
       const date = new Date(year, month - 1, prevMonthDays - i + 1);
-      days.push({ date, currentMonth: false, isToday: false, appointments: [], emptySlots: [] });
+      days.push({ date, currentMonth: false, isToday: false, slots: [], extra: [] });
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
       const date = new Date(year, month, d);
-      days.push({ date, currentMonth: true, isToday: this.dateKey(date) === todayKey, appointments: [], emptySlots: [] });
+      days.push({ date, currentMonth: true, isToday: this.dateKey(date) === todayKey, slots: [], extra: [] });
     }
 
     let nextMonthDay = 1;
@@ -165,8 +168,8 @@ export class Dashboard implements OnInit {
         date: new Date(year, month + 1, nextMonthDay),
         currentMonth: false,
         isToday: false,
-        appointments: [],
-        emptySlots: [],
+        slots: [],
+        extra: [],
       });
       nextMonthDay++;
     }
@@ -213,7 +216,9 @@ export class Dashboard implements OnInit {
     return `${h}:${m}`;
   }
 
-  openCreateModal(date: Date): void {
+  openCreateModal(date: Date, time = '', event?: Event): void {
+    event?.stopPropagation();
+
     this.isModalOpen = true;
     this.isEditMode = false;
     this.selectedAppointmentId = null;
@@ -222,13 +227,12 @@ export class Dashboard implements OnInit {
     this.clientSearch = '';
     this.clientResults = [];
     this.errorMessage = '';
-    this.startHour = '';
-    this.startMinute = '';
+    [this.startHour = '', this.startMinute = ''] = time ? time.split(':') : [];
 
     this.form.reset({
       client_id: null,
       salon_service_id: null,
-      start_time: '',
+      start_time: time,
     });
   }
 
@@ -395,8 +399,25 @@ export class Dashboard implements OnInit {
 
     for (const day of this.calendarDays) {
       const key = this.dateKey(day.date);
-      day.appointments = (map.get(key) ?? []).sort((a, b) => a.start_time.localeCompare(b.start_time));
-      day.emptySlots = Array.from({ length: Math.max(0, SLOTS_PER_DAY - day.appointments.length) }, (_, i) => i);
+      const appointments = (map.get(key) ?? []).sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+      day.slots = SLOT_TIMES.map(() => null);
+      day.extra = [];
+
+      for (const appointment of appointments) {
+        // The latest slot that starts no later than the appointment, so 10:30 lands in the 09:00 one.
+        const time = this.formatTime(appointment.start_time);
+        const preferred = Math.max(0, SLOT_TIMES.filter((slot) => slot <= time).length - 1);
+        // Taken already: the next free slot, else the closest free one before it, else it goes below the slots.
+        const free = day.slots.findIndex((slot, i) => !slot && i >= preferred);
+        const index = free !== -1 ? free : day.slots.lastIndexOf(null);
+
+        if (index === -1) {
+          day.extra.push(appointment);
+        } else {
+          day.slots[index] = appointment;
+        }
+      }
     }
   }
 

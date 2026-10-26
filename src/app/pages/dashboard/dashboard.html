@@ -33,23 +33,34 @@
         <div class="day-number">{{ day.date.getDate() }}</div>
 
         <div class="appointments-list">
-          <div
-            class="appointment-chip"
-            *ngFor="let appointment of day.appointments"
-            (click)="openEditModal(appointment, $event)"
-          >
-            <span class="chip-time">{{ formatTime(appointment.start_time) }}</span>
-            <span class="chip-name">
-              {{ appointment.client?.first_name }} {{ appointment.client?.last_name }}
-            </span>
-          </div>
+          <ng-container *ngFor="let appointment of day.slots; let i = index">
+            <ng-container
+              *ngTemplateOutlet="appointment ? chip : emptySlot; context: { $implicit: appointment, time: slotTimes[i], day: day }"
+            ></ng-container>
+          </ng-container>
 
-          <div class="empty-slot" *ngFor="let slot of day.emptySlots"></div>
+          <ng-container *ngFor="let appointment of day.extra">
+            <ng-container *ngTemplateOutlet="chip; context: { $implicit: appointment }"></ng-container>
+          </ng-container>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+<ng-template #chip let-appointment>
+  <div class="appointment-chip" (click)="openEditModal(appointment, $event)">
+    <span class="chip-time">{{ formatTime(appointment.start_time) }}</span>
+    <span class="chip-name">
+      {{ appointment.client?.first_name }} {{ appointment.client?.last_name }}
+    </span>
+  </div>
+</ng-template>
+
+<!-- Clicking a free slot books that slot's time. -->
+<ng-template #emptySlot let-time="time" let-day="day">
+  <div class="empty-slot" (click)="day.currentMonth && openCreateModal(day.date, time, $event)"></div>
+</ng-template>
 
 <div class="modal-backdrop" *ngIf="isModalOpen">
   <div class="modal-card">
